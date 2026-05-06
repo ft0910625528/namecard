@@ -264,6 +264,56 @@ const App = (() => {
     });
   }
 
+  // ── 影像前處理（提升 OCR 準確度）───────────────────
+  function preprocessForOCR(base64) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+
+        // 1. 放大：確保最長邊至少 2000px（Tesseract 在高解析度下更準確）
+        const MIN_PX = 2000, MAX_PX = 3000;
+        const longest = Math.max(w, h);
+        if (longest < MIN_PX) {
+          const s = MIN_PX / longest;
+          w = Math.round(w * s); h = Math.round(h * s);
+        } else if (longest > MAX_PX) {
+          const s = MAX_PX / longest;
+          w = Math.round(w * s); h = Math.round(h * s);
+        }
+
+        // 2. 畫到 canvas，套用 CSS filter 提升對比與亮度
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.filter = 'grayscale(1) contrast(1.6) brightness(1.08)';
+        ctx.drawImage(img, 0, 0, w, h);
+        ctx.filter = 'none';
+
+        // 3. 取出像素，做直方圖延伸（讓暗字更黑、背景更白）
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        const samples = [];
+        for (let i = 0; i < d.length; i += 16) samples.push(d[i]); // 每 4 px 取樣
+        samples.sort((a, b) => a - b);
+        const lo  = samples[Math.floor(samples.length * 0.05)];
+        const hi  = samples[Math.floor(samples.length * 0.95)];
+        const rng = hi - lo || 1;
+
+        for (let i = 0; i < d.length; i += 4) {
+          const v = Math.min(255, Math.max(0, Math.round((d[i] - lo) / rng * 255)));
+          d[i] = d[i + 1] = d[i + 2] = v;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // 4. 輸出 PNG（無損，OCR 效果比 JPEG 好）
+        resolve(cv.toDataURL('image/png'));
+      };
+      img.src = base64;
+    });
+  }
+
+  // 儲存用壓縮（顯示用，較小檔案）
   function compressImage(base64, maxPx = 1600) {
     return new Promise(resolve => {
       const img = new Image();
@@ -286,6 +336,10 @@ const App = (() => {
   async function runOCR(base64) {
     showView('ocr');
     $('ocr-img').src = base64;
+    $('ocr-status-text').textContent = '影像前處理中…';
+
+    // 前處理：強化對比給 Tesseract 用，原圖保留做預覽和儲存
+    const processed = await preprocessForOCR(base64);
     $('ocr-status-text').textContent = '正在辨識文字，請稍候…';
 
     try {
@@ -296,7 +350,14 @@ const App = (() => {
           }
         }
       });
-      const { data } = await worker.recognize(base64);
+
+      // PSM 6：單一均勻文字區塊（最適合名片版面）
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6',
+        preserve_interword_spaces: '1',
+      });
+
+      const { data } = await worker.recognize(processed);
       await worker.terminate();
 
       const text = data.text.trim();
@@ -406,6 +467,7 @@ const App = (() => {
       e.target.value = '';
       if (!file) return;
       const b64 = await fileToBase64(file);
+      // 原圖壓縮後儲存（保留顯示用），前處理版本給 OCR 用
       const compressed = await compressImage(b64);
       state.pendingImage = compressed;
       await runOCR(compressed);
