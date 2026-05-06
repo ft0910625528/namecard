@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><title>產生圖示</title></head>
+<body>
+<p>點擊下方按鈕產生並下載圖示</p>
+<button onclick="generate(192)">下載 icon-192.png</button>
+<button onclick="generate(512)">下載 icon-512.png</button>
+<canvas id="cv"></canvas>
+<script>
+function generate(size) {
+  const cv = document.getElementById('cv');
+  cv.width = cv.height = size;
+  const ctx = cv.getContext('2d');
+  const r = size * 0.22;
+
+  // 背景
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#007AFF');
+  grad.addColorStop(1, '#5AC8FA');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, r);
+  ctx.fill();
+
+  // 名片圖形
+  const cx = size / 2, cy = size / 2;
+  const cw = size * 0.62, ch = size * 0.4;
+  const cr = size * 0.06;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.beginPath();
+  ctx.roundRect(cx - cw/2, cy - ch/2, cw, ch, cr);
+  ctx.fill();
+
+  // 頭像圓圈
+  const avR = ch * 0.3;
+  const avX = cx - cw/2 + avR + ch*0.18;
+  const avY = cy;
+  ctx.fillStyle = '#007AFF';
+  ctx.beginPath();
+  ctx.arc(avX, avY, avR, 0, Math.PI*2);
+  ctx.fill();
+
+  // 文字線條
+  ctx.fillStyle = '#C7C7CC';
+  const lx = avX + avR + ch * 0.2;
+  const lw1 = cw * 0.3, lw2 = cw * 0.2;
+  const lh = ch * 0.07, lg = ch * 0.13;
+  ctx.beginPath();
+  ctx.roundRect(lx, cy - lg - lh, lw1, lh, 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(lx, cy + lg, lw2, lh, 2);
+  ctx.fill();
+
+  const a = document.createElement('a');
+  a.download = `icon-${size}.png`;
+  a.href = cv.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

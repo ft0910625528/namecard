@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="名片夾">
+  <meta name="theme-color" content="#007AFF">
+  <title>名片夾</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ VIEW: 名片列表 ═══ -->
+  <div id="view-list" class="view active">
+    <header class="nav-bar">
+      <div class="nav-title">名片夾</div>
+      <button class="nav-btn-icon" id="btn-add" title="新增名片">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </header>
+    <div class="search-wrap">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" id="search-input" placeholder="搜尋姓名、公司、電話…">
+      </div>
+    </div>
+    <div id="card-list" class="card-list">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">📇</div>
+        <p class="empty-title">名片夾是空的</p>
+        <p class="empty-hint">點擊右上角 + 開始新增名片</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW: 新增選單（底部彈出） ═══ -->
+  <div id="view-add" class="view sheet hidden">
+    <div class="sheet-backdrop" id="sheet-backdrop"></div>
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">新增名片</div>
+      <div class="add-options">
+        <button class="add-option-btn" id="btn-take-photo">
+          <div class="option-icon-wrap blue"><span>📷</span></div>
+          <div class="option-text">
+            <span class="option-label">拍攝名片</span>
+            <span class="option-hint">自動 OCR 辨識文字</span>
+          </div>
+          <svg class="option-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="add-option-btn" id="btn-pick-photo">
+          <div class="option-icon-wrap green"><span>🖼️</span></div>
+          <div class="option-text">
+            <span class="option-label">從相簿選取</span>
+            <span class="option-hint">選擇已有的名片照片</span>
+          </div>
+          <svg class="option-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="add-option-btn" id="btn-scan-qr">
+          <div class="option-icon-wrap orange"><span>🔲</span></div>
+          <div class="option-text">
+            <span class="option-label">掃描 QR Code</span>
+            <span class="option-hint">掃描名片上的 QR Code</span>
+          </div>
+          <svg class="option-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="add-option-btn" id="btn-manual">
+          <div class="option-icon-wrap purple"><span>✏️</span></div>
+          <div class="option-text">
+            <span class="option-label">手動輸入</span>
+            <span class="option-hint">自行填寫聯絡資料</span>
+          </div>
+          <svg class="option-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <button class="btn-sheet-cancel" id="btn-add-cancel">取消</button>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="album-input" accept="image/*" style="display:none">
+  </div>
+
+  <!-- ═══ VIEW: QR Code 掃描 ═══ -->
+  <div id="view-qr" class="view hidden fullscreen-dark">
+    <header class="nav-bar dark">
+      <button class="nav-btn light" id="btn-qr-cancel">取消</button>
+      <div class="nav-title light">掃描 QR Code</div>
+      <div style="width:48px"></div>
+    </header>
+    <div class="qr-scanner-wrap">
+      <video id="qr-video" autoplay playsinline muted></video>
+      <canvas id="qr-canvas" style="display:none"></canvas>
+      <div class="qr-overlay">
+        <div class="qr-frame-wrap">
+          <div class="qr-frame">
+            <span class="qr-corner tl"></span>
+            <span class="qr-corner tr"></span>
+            <span class="qr-corner bl"></span>
+            <span class="qr-corner br"></span>
+          </div>
+        </div>
+        <p class="qr-hint">將 QR Code 對準框框內</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW: OCR 辨識中 ═══ -->
+  <div id="view-ocr" class="view hidden">
+    <header class="nav-bar">
+      <button class="nav-btn" id="btn-ocr-cancel">取消</button>
+      <div class="nav-title">辨識名片</div>
+      <div style="width:48px"></div>
+    </header>
+    <div class="ocr-wrap">
+      <div class="ocr-preview-box">
+        <img id="ocr-img" src="" alt="名片預覽">
+      </div>
+      <div id="ocr-status" class="ocr-status">
+        <div class="loader-ring"></div>
+        <p id="ocr-status-text">正在辨識文字，請稍候…</p>
+        <p class="ocr-tip">首次使用需下載語言包，可能需要 30 秒</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW: 編輯 / 新增名片 ═══ -->
+  <div id="view-edit" class="view hidden">
+    <header class="nav-bar">
+      <button class="nav-btn" id="btn-edit-cancel">取消</button>
+      <div class="nav-title" id="edit-nav-title">新增名片</div>
+      <button class="nav-btn primary" id="btn-edit-save">儲存</button>
+    </header>
+    <div class="edit-scroll">
+      <div id="edit-photo-section" class="edit-photo-section hidden">
+        <img id="edit-photo-img" src="" alt="名片照片">
+      </div>
+      <div class="form-section">
+        <div class="form-row">
+          <label>姓名</label>
+          <input type="text" id="f-name" placeholder="王小明" autocomplete="name">
+        </div>
+        <div class="form-row">
+          <label>職稱</label>
+          <input type="text" id="f-jobtitle" placeholder="業務經理">
+        </div>
+        <div class="form-row">
+          <label>公司</label>
+          <input type="text" id="f-company" placeholder="XX 科技有限公司" autocomplete="organization">
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-row">
+          <label>電話</label>
+          <input type="tel" id="f-phone" placeholder="02-12345678" autocomplete="tel">
+        </div>
+        <div class="form-row">
+          <label>手機</label>
+          <input type="tel" id="f-mobile" placeholder="0912-345-678">
+        </div>
+        <div class="form-row">
+          <label>傳真</label>
+          <input type="tel" id="f-fax" placeholder="02-12345679">
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-row">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="name@company.com" autocomplete="email">
+        </div>
+        <div class="form-row">
+          <label>網站</label>
+          <input type="url" id="f-website" placeholder="https://www.company.com">
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-row">
+          <label>地址</label>
+          <textarea id="f-address" placeholder="台北市信義區XX路XX號" rows="2" autocomplete="street-address"></textarea>
+        </div>
+        <div class="form-row">
+          <label>備註</label>
+          <textarea id="f-notes" placeholder="備註說明…" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="form-section" id="raw-section" style="display:none">
+        <div class="form-row">
+          <label>OCR 辨識原文</label>
+          <textarea id="f-raw" rows="6" readonly class="raw-text"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VIEW: 名片詳情 ═══ -->
+  <div id="view-detail" class="view hidden">
+    <header class="nav-bar">
+      <button class="nav-btn" id="btn-detail-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        返回
+      </button>
+      <div class="nav-title"></div>
+      <button class="nav-btn" id="btn-detail-edit">編輯</button>
+    </header>
+    <div class="detail-scroll">
+      <div class="detail-hero">
+        <div id="d-avatar" class="detail-avatar">A</div>
+        <div class="detail-hero-text">
+          <div id="d-name" class="detail-name"></div>
+          <div id="d-subtitle" class="detail-subtitle"></div>
+        </div>
+      </div>
+      <div id="d-photo-wrap" class="detail-photo-wrap hidden">
+        <img id="d-photo" src="" alt="名片照片">
+      </div>
+      <div id="d-fields" class="detail-fields"></div>
+      <div class="detail-actions">
+        <button class="detail-action-btn primary" id="btn-save-contact">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          儲存至聯絡人
+        </button>
+        <button class="detail-action-btn danger" id="btn-delete-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+          刪除名片
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Toast 提示 -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="js/db.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
