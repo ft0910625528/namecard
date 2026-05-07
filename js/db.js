@@ -50,7 +50,9 @@ const DB = (() => {
     if (!card.created) card.created = Date.now();
     return new Promise((resolve, reject) => {
       const tx  = db.transaction(STORE, 'readwrite');
-      const req = card.id ? tx.objectStore(STORE).put(card) : tx.objectStore(STORE).add(card);
+      const isNew = !card.id;
+      if (isNew) delete card.id;
+      const req = isNew ? tx.objectStore(STORE).add(card) : tx.objectStore(STORE).put(card);
       req.onsuccess = () => { card.id = req.result; resolve(card); };
       req.onerror   = e => reject(e.target.error);
     });

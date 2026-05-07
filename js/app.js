@@ -223,9 +223,10 @@ const App = (() => {
       if (orig) card.photo = orig.photo;
     }
 
+    const isNew = !card.id;
     await DB.save(card);
     state.pendingImage = null;
-    toast(card.id ? '名片已更新 ✓' : '名片已儲存 ✓');
+    toast(isNew ? '名片已儲存 ✓' : '名片已更新 ✓');
     await loadList();
     showView('list');
   }
