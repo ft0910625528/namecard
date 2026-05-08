@@ -223,11 +223,17 @@ const App = (() => {
       if (orig) card.photo = orig.photo;
     }
 
-    await DB.save(card);
-    state.pendingImage = null;
-    toast(card.id ? '名片已更新 ✓' : '名片已儲存 ✓');
-    await loadList();
-    showView('list');
+    try {
+      const isNew = !card.id;
+      await DB.save(card);
+      state.pendingImage = null;
+      toast(isNew ? '名片已儲存 ✓' : '名片已更新 ✓');
+      await loadList();
+      showView('list');
+    } catch (err) {
+      console.error('saveCard error:', err);
+      toast('儲存失敗，請重試');
+    }
   }
 
   // ── 刪除 ────────────────────────────────────────────
