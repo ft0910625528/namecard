@@ -731,6 +731,18 @@ html, body {
 .ac7 { background: #30B0C7; }
 
 /* ═══════════════════════════════
+   Version
+═══════════════════════════════ */
+.app-version {
+  text-align: center;
+  font-size: 11px;
+  color: var(--gray4);
+  padding: 8px 0 calc(var(--safe-bot) + 10px);
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════
    Utilities
 ═══════════════════════════════ */
 .hidden { display: none !important; }
