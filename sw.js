@@ -1,4 +1,4 @@
-const CACHE = 'namecard-v1';
+const CACHE = 'namecard-v2';
 const ASSETS = [
   './',
   './index.html',
