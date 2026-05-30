@@ -1,0 +1,4 @@
+# System packages downloaded during build
+*.deb
+# Temporary video build directory
+video_tmp/
